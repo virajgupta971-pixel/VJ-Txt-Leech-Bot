@@ -48,7 +48,8 @@ async def upload(bot: Client, m: Message):
             content = content.split("\n")
             links = []
             for i in content:
-                links.append(i.split("://", 1))
+                if "://" in i:
+                    links.append(i.split("://", 1))
         os.remove(x)
     except:
         await m.reply_text("**Invalid file input.**")
@@ -155,21 +156,21 @@ async def upload(bot: Client, m: Message):
                 url = resp_json.get('url', url)
 
             elif 'adda247' in url:
-                # Adda247 secure stream handling with token/headers
                 token_to_use = auth_token if auth_token.lower() != 'none' else ''
                 headers = {'x-auth-token': token_to_use, 'User-Agent': 'Mozilla/5.0'}
                 try:
                     adda_resp = requests.get(url, headers=headers).json()
                     url = adda_resp.get('url', url)
                 except:
-                    pass # Fallback to direct url if json parsing fails
+                    pass
                 
             elif '/master.mpd' in url:
                 id = url.split("/")[-2]
                 url = "https://d26g5bnklkwsh4.cloudfront.net/" + id + "/master.m3u8"
                 
-            name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
-            name = f'{str(count).zfill(3)}) {name1[:60]}'
+            # Clean filename to prevent path / string conversion errors
+            name1 = links[i][0].replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("[", "").replace("]", "").replace("https", "").replace("http", "").strip()
+            name = f'{str(count).zfill(3)}_{name1[:50]}'
             
             if "youtu" in url:
                 ytf = f"b[height<={raw_text2}][ext=mp4]/bv[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[ext=mp4]"
