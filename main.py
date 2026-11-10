@@ -100,12 +100,10 @@ async def upload(bot: Client, m: Message):
     else:
         MR = raw_text3
 
-    # --- NAYA STEP: Classplus Token ke liye prompt ---
     await editable.edit("🔑 **Enter your Classplus Token (`x-access-token`)**:\n(Agar token ki zaroorat nahi hai toh `none` likh dein)")
     input_token: Message = await bot.listen(editable.chat.id)
     classplus_token = input_token.text
     await input_token.delete(True)
-    # -----------------------------------------------
 
     await editable.edit("Now send the Thumb url\nEg » https://graph.org/file/ce1723991756e48c35aa1.jpg \n Or if don't want thumbnail send = no")
     input6 = message = await bot.listen(editable.chat.id)
@@ -123,12 +121,17 @@ async def upload(bot: Client, m: Message):
     if len(links) == 1:
         count = 1
     else:
-        count = int(raw_text)
+        try:
+            count = int(raw_text.strip())
+        except:
+            count = 1
 
     try:
         for i in range(count - 1, len(links)):
+            if len(links[i]) < 2:
+                continue
             V = links[i][1].replace("file/d/","uc?export=download&id=").replace("www.youtube-nocookie.com/embed", "youtu.be").replace("?modestbranding=1", "").replace("/view?usp=sharing","")
-            url = "https://" + V
+            url = "https://" + V.strip()
             
             if "visionias" in url:
                 async with ClientSession() as session:
@@ -137,12 +140,12 @@ async def upload(bot: Client, m: Message):
                         url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
             
             elif 'videos.classplusapp' in url:
-                # Ab yahan hardcoded token ki jagah jo aapne chat me dala hoga, wo use hoga!
                 token_to_use = classplus_token if classplus_token.lower() != 'none' else ''
-                url = requests.get(
+                resp_json = requests.get(
                     f'https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url}', 
                     headers={'x-access-token': token_to_use}
-                ).json()['url']
+                ).json()
+                url = resp_json.get('url', url)
                 
             elif '/master.mpd' in url:
                 id = url.split("/")[-2]
