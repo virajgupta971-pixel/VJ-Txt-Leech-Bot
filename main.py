@@ -27,7 +27,7 @@ bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 @bot.on_message(filters.command(["start"]))
 async def start(bot: Client, m: Message):
-    await m.reply_text(f"<b>Hello {m.from_user.mention} 👋\n\nI Am A Bot For Download Links From Your **.TXT** File And Then Upload That File On Telegram So Basically If You Want To Use Me First Send Me /upload Command And Then Follow Few Steps..\n\nUse /stop to stop any ongoing task.</b>")
+    await m.reply_text(f"<b>Hello {m.from_user.mention} 👋\n\nI Am An All-In-One Leech Bot for Classplus, Adda247, Telegram, and Direct Links!\n\nSend /upload to start processing. Use /stop to cancel.</b>")
 
 @bot.on_message(filters.command("stop"))
 async def restart_handler(_, m):
@@ -55,7 +55,7 @@ async def upload(bot: Client, m: Message):
         os.remove(x)
         return
 
-    await editable.edit(f"**𝕋ᴏᴛᴀʟ ʟɪɴᴋ𝕤 ғᴏᴜɴᴅ ᴀʀᴇ🔗🔗** **{len(links)}**\n\n**𝕊ᴇɴᴅ 𝔽ʀᴏᴍ ᴡʜᴇʀᴇ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ ɪɴɪᴛɪᴀʟ ɪ𝕤** **1**")
+    await editable.edit(f"**𝕋ᴏᴛᴀʟ ʟɪɴᴋ𝕤 ғᴏᴜɴᴅ ᴀʀᴇ🔗🔗** **{len(links)}**\n\n**𝕊ᴇɴᴅ 𝔽ʀᴏᴍ ᴡʜᴇʀᴇ ʏᴏᴜ ᴡᴀɴᴛ to download initial is** **1**")
     
     input0: Message = await bot.listen(editable.chat.id)
     raw_text = input0.text
@@ -100,10 +100,17 @@ async def upload(bot: Client, m: Message):
     else:
         MR = raw_text3
 
-    await editable.edit("🔑 **Enter your Classplus Token (`x-access-token`)**:\n(Agar token ki zaroorat nahi hai toh `none` likh dein)")
+    # --- ALL-IN-ONE TOKEN / AUTH PROMPT ---
+    await editable.edit(
+        "🔐 **Select Platform & Provide Auth Token / Header:**\n\n"
+        "1. **Classplus:** Enter your `x-access-token`\n"
+        "2. **Adda247:** Enter your `x-auth-token` or Cookie string\n"
+        "3. **Normal / Public Links:** Type `none`"
+    )
     input_token: Message = await bot.listen(editable.chat.id)
-    classplus_token = input_token.text
+    auth_token = input_token.text.strip()
     await input_token.delete(True)
+    # ---------------------------------------
 
     await editable.edit("Now send the Thumb url\nEg » https://graph.org/file/ce1723991756e48c35aa1.jpg \n Or if don't want thumbnail send = no")
     input6 = message = await bot.listen(editable.chat.id)
@@ -140,12 +147,22 @@ async def upload(bot: Client, m: Message):
                         url = re.search(r"(https://.*?playlist.m3u8.*?)\"", text).group(1)
             
             elif 'videos.classplusapp' in url:
-                token_to_use = classplus_token if classplus_token.lower() != 'none' else ''
+                token_to_use = auth_token if auth_token.lower() != 'none' else ''
                 resp_json = requests.get(
                     f'https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url}', 
                     headers={'x-access-token': token_to_use}
                 ).json()
                 url = resp_json.get('url', url)
+
+            elif 'adda247' in url:
+                # Adda247 secure stream handling with token/headers
+                token_to_use = auth_token if auth_token.lower() != 'none' else ''
+                headers = {'x-auth-token': token_to_use, 'User-Agent': 'Mozilla/5.0'}
+                try:
+                    adda_resp = requests.get(url, headers=headers).json()
+                    url = adda_resp.get('url', url)
+                except:
+                    pass # Fallback to direct url if json parsing fails
                 
             elif '/master.mpd' in url:
                 id = url.split("/")[-2]
@@ -192,7 +209,7 @@ async def upload(bot: Client, m: Message):
                         time.sleep(e.x)
                         continue
                 else:
-                    Show = f"**⥥ 🄳🄾🅆🄽🄻🄾🄰🄳🄸🄽🄶⬇️⬇️... »**\n\n**📝Name »** `{name}\n❄Quality » {raw_text2}`\n\n**🔗URL »** `{url}`"
+                    Show = f"**⥥ 🄳🄾🅆🄻🄾🄰🄳🄸🄽🄶⬇️⬇️... »**\n\n**📝Name »** `{name}\n❄Quality » {raw_text2}`\n\n**🔗URL »** `{url}`"
                     prog = await m.reply_text(Show)
                     res_file = await helper.download_video(url, cmd, name)
                     filename = res_file
